@@ -1,0 +1,15 @@
+# Variables de entorno
+.env
+
+# Entornos virtuales
+.venv/
+venv/
+
+# Caché compilada de Python (¡Sin barra inicial para que actúe de forma global!)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos generados localmente
+diringest_output.txt
