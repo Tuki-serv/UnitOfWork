@@ -1,5 +1,7 @@
 from typing import Generic, TypeVar, Type, Sequence, Optional
-from sqlmodel import SQLModel, Session, select
+import uuid
+from sqlmodel import SQLModel, Session, select, func
+from app.core.enums import EstadoFiltro
 
 # Definimos "T" como una variable genérica que representará cualquier tabla (Hero, Team, etc.)
 T = TypeVar("T", bound=SQLModel)
@@ -36,7 +38,7 @@ class BaseRepository(Generic[T]):
         self.model = model
 
 
-    def get_by_id(self, record_id: int) -> Optional[T]:
+    def get_by_id(self, record_id: int | uuid.UUID) -> Optional[T]:
         """
         Obtiene una entidad por su ID primario.
 
@@ -50,31 +52,52 @@ class BaseRepository(Generic[T]):
             No lanza excepciones. El manejo de "no encontrado" debe hacerse en la capa de servicio.
         """
         return self.session.get(self.model, record_id)
+    
+    def get_all_by_state(
+            self,
+            estado: EstadoFiltro = EstadoFiltro.ACTIVO,
+            offset: int = 0,
+            limit: int = 20
+    ) -> Sequence[T]:
+        statement = select(self.model)
+
+        if hasattr(self.model, "deleted_at"):
+            if estado == EstadoFiltro.ACTIVO:
+                statement = statement.where(self.model.deleted_at.is_(None))
+            elif estado == EstadoFiltro.ELIMINADO:
+                statement = statement.where(self.model.deleted_at.is_not(None))
+        
+        if hasattr(self.model, "created_at"):
+            statement = statement.order_by(self.model.created_at.asc())
+        # elif hasattr(self.model, "id"):
+        #     statement = statement.order_by(self.model.id.asc())
+        
+        return self.session.exec(statement.offset(offset).limit(limit)).all()
+        
 
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> Sequence[T]:
-        """
-        Obtiene una lista paginada de entidades.
+    # def get_all(self, offset: int = 0, limit: int = 20) -> Sequence[T]:
+    #     """
+    #     Obtiene una lista paginada de entidades.
 
-        Args:
-            offset (int): Cantidad de registros a omitir (paginación).
-            limit (int): Cantidad máxima de registros a devolver.
+    #     Args:
+    #         offset (int): Cantidad de registros a omitir (paginación).
+    #         limit (int): Cantidad máxima de registros a devolver.
 
-        Returns:
-            Sequence[ModelT]: Lista de entidades recuperadas.
+    #     Returns:
+    #         Sequence[ModelT]: Lista de entidades recuperadas.
 
-        Nota:
-            No garantiza orden si no se especifica explícitamente en la query.
-        """
-        return self.session.exec(
-            select(self.model).offset(offset).limit(limit)
-        ).all()
+    #     Nota:
+    #         No garantiza orden si no se especifica explícitamente en la query.
+    #     """
+    #     return self.session.exec(
+    #         select(self.model).offset(offset).limit(limit)
+    #     ).all()
     
     def count_model(self) -> int:
         """
         Cuenta el total de registros del modelo.
         """
-        from sqlmodel import func
         return self.session.exec(
             select(func.count()).select_from(self.model)
         ).one()

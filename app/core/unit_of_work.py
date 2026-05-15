@@ -1,4 +1,8 @@
 from sqlmodel import Session
+from typing import TypeVar
+
+# Creamos un tipo genérico que representa a UnitOfWork o cualquier clase que herede de ella
+U = TypeVar("U", bound="UnitOfWork")
 
 class UnitOfWork:
     """
@@ -25,7 +29,7 @@ class UnitOfWork:
         """
         self._session = session
 
-    def __enter__(self) -> "UnitOfWork":
+    def __enter__(self: U) -> U:
         """
         Método invocado al entrar en el contexto `with`.
 

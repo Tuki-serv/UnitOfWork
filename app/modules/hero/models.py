@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, List, Optional
 from sqlalchemy import Column, ForeignKey, Integer
 from sqlmodel import Field, Relationship, SQLModel
+from datetime import datetime, timezone
 
 # El TYPE_CHECKING es un truco ninja de Python.
 # Solo se ejecuta cuando el editor lee el código (para autocompletado), 
@@ -29,6 +30,9 @@ class Hero(SQLModel, table=True):
     alias: str = Field(unique=True)
     power_level: int = Field(default=1)
     is_active: bool = Field(default=True)
+
+    deleted_at: Optional[datetime] = None  # ← agregás esto
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # ← y esto
 
     weapon_id: Optional[int] = Field(default=None,foreign_key="weapon.id")
     weapon: Optional["Weapon"] = Relationship(back_populates="hero")
