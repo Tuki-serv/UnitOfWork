@@ -48,5 +48,5 @@ class HeroUnitOfWork(UnitOfWork):
         """
         super().__init__(session)
         self.heroes = hero(session)
-        self.teams = team(session)
-        self.weapons = weapon(session)
+        # self.teams = team(session)
+        # self.weapons = weapon(session)

@@ -6,26 +6,30 @@ from datetime import datetime, timezone
 from app.core.unit_of_work import UnitOfWork
 from app.core.repository import BaseRepository
 
-ModelType = TypeVar("ModelType", bound=SQLModel)
+ModelType = TypeVar("ModelType", bound=SQLModel) # hero
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 UoWType = TypeVar("UowType", bound=UnitOfWork)
 RepositoryType = TypeVar("RepositoryType", bound=BaseRepository)
 
-class base_service(Generic[ModelType, CreateSchemaType, UpdateSchemaType, UoWType, RepositoryType]):
+class base_service(Generic[ModelType, CreateSchemaType, UpdateSchemaType, UoWType]):
     def __init__(self, uow: UoWType, repo_name: str, model_class: Type[ModelType],):
         self.uow = uow
-        self.repo = RepositoryType[ModelType]
+        self.repo = self._repo()
         self.model_class = model_class
 
-    @property
     def _repo(self) -> BaseRepository[ModelType]:
         return getattr(self.uow, self.repo_name)
     
+    
     def get_all(self, offset: int = 0, limit: int = 20):
         with self.uow as uow:
-            items = self._repo.get_all_by_state(offset=offset, limit= limit)
-            total = self._repo.count_model()
+
+        
+            items = self.uow.repo.get_all_by_state(offset=offset, limit= limit)
+
+            # items = self._repo.get_all_by_state(offset=offset, limit= limit)
+            total = self.uow._repo.count_model()
             return {"data": items, "total": total}
         
     def _get_or_404(self, item_id) -> ModelType:
